@@ -2,6 +2,33 @@ import pandas as pd
 import numpy as np
 import pdb
 import matplotlib.pyplot as plt
+import scipy.stats as sst
+
+
+def HypTest(data):
+	# Testing for normal distribution
+	print('    output normaltest for regular') 
+	print(sst.normaltest(data.av_reg))
+	print('    output normaltest for dynamic') 
+	print(sst.normaltest(data.av_dyn))
+
+	# Zweistichproben Gauss Test : https://de.wikipedia.org/wiki/Gau%C3%9F-Test
+	# 
+	reg_td_av, dyn_td_av = data.mean()[:2]
+	n = len(data.av_reg)
+	reg_dev = np.sqrt(((data.av_reg - reg_td_av)**2).values.sum()/(len(data.av_reg)-1))
+	dyn_dev = np.sqrt(((data.av_dyn - dyn_td_av)**2).values.sum()/(len(data.av_dyn)-1))
+
+	Z=(dyn_td_av-reg_td_av)/np.sqrt((dyn_dev)**2/n + (reg_dev)**2/n)
+
+	Z_dyn = np.sqrt(n)*(dyn_td_av - reg_td_av)/dyn_dev
+
+	print('\n\n    Zweistichproben Gauss Test Z Value: %5.3f' %Z_dyn)
+
+	# Welch-Test https://en.wikipedia.org/wiki/Welch%27s_t-test
+	#
+	#sst.ttest_ind_from_stats(reg_td_av,reg_dev,134,dyn_td_av,dyn_dev,134)
+
 
 #data = pd.read_csv('2015_2016_clean_uci_potsdam.csv', usecols=['show_start','auditorium_no','seat_number', 'seat_row'],parse_dates=['show_start'],nrows=1000)
 df = pd.read_csv('2015_2016_clean_uci_potsdam.csv',nrows=1) 
@@ -19,6 +46,7 @@ avg_row.rename(columns= {'seat_row':'avg_row_per_day'},inplace=True)
 avg_row_dyn.rename(columns= {'seat_row':'avg_row_per_day'},inplace=True)
 avg_row['tickets_per_day'] = pd.DataFrame(regular.groupby(['show_start']).size())
 avg_row_dyn['tickets_per_day'] = pd.DataFrame(dynamic.groupby(['show_start']).size())
+
 
 ## Different Auditoriums
 avg_row_aud = pd.DataFrame(regular.groupby(['show_start','auditorium_no']).sum()['seat_row'])
@@ -44,35 +72,33 @@ weekly_aud['av_dyn'] = weekly_aud.tot_row_val_dynamic/ weekly_aud.tickets_per_da
 weekly_total['av_reg'] = weekly_total.tot_row_val/ weekly_total.tickets_per_day_per_aud
 weekly_total['av_dyn'] = weekly_total.tot_row_val_dynamic/ weekly_total.tickets_per_day_per_aud_dynamic
 
-aud_no = 1
+aud_no = 3
 temp =  weekly_aud[['av_reg','av_dyn']][weekly_aud.auditorium_no == aud_no]
 temp['diff'] = temp.av_dyn - temp.av_reg
 temp.plot()
+
+data = pd.DataFrame(avg_row_aud.tot_row_val/ avg_row_aud.tickets_per_day_per_aud)
+data.rename(columns= {0:'av_reg_day_aud'},inplace=True)
+data = data.reset_index()
+data.show_start = pd.to_datetime(data.show_start)
+data['ind'] = 1000*data.show_start.dt.month+10*data.show_start.dt.day+data.auditorium_no
+
+data_d = pd.DataFrame(avg_row_aud_dyn.tot_row_val_dynamic/ avg_row_aud_dyn.tickets_per_day_per_aud_dynamic)
+data_d.rename(columns= {0:'av_reg_day_aud_dyn'},inplace=True)
+data_d = data_d.reset_index()
+data_d.show_start = pd.to_datetime(data_d.show_start)
+data_d['ind'] = 1000*data_d.show_start.dt.month+10*data_d.show_start.dt.day+data_d.auditorium_no
+
+data = data.merge(data_d, on='ind')  
+data.drop(['auditorium_no_y','show_start_x','ind'],axis=1,inplace=True)
+
+temp = data[['av_reg_day_aud','av_reg_day_aud_dyn']][data.auditorium_no_x == aud_no]
+temp.rename(columns= {'av_reg_day_aud':'av_reg','av_reg_day_aud_dyn':'av_dyn'},inplace=True)
+
+HypTest(temp)
+
 plt.show()
 
-
-def HypTest(reg,dyn):
-	# Testing for normal distribution
-	print('    output normaltest for regular') 
-	print(sst.normaltest(avg_row.reg))
-	print('    output normaltest for dynamic') 
-	print(sst.normaltest(avg_row.dyn))
-
-	# Zweistichproben Gauss Test : https://de.wikipedia.org/wiki/Gau%C3%9F-Test
-	# 
-	reg_td_av, dyn_td_av = avg_row.mean()[:2]
-	n = len(avg_row.reg)
-	reg_dev = np.sqrt(((avg_row.reg - reg_td_av)**2).values.sum()/(len(avg_row.reg)-1))
-	dyn_dev = np.sqrt(((avg_row.dyn - dyn_td_av)**2).values.sum()/(len(avg_row.dyn)-1))
-
-	Z=(dyn_td_av-reg_td_av)/np.sqrt((dyn_dev)**2/n + (reg_dev)**2/n)
-
-	Z_dyn = np.sqrt(len(avg_row.dyn))*(dyn_td_av - reg_td_av)/dyn_dev
-
-	# Welch-Test https://en.wikipedia.org/wiki/Welch%27s_t-test
-	#
-	import scipy.stats as sst
-	sst.ttest_ind_from_stats(reg_td_av,reg_dev,134,dyn_td_av,dyn_dev,134)
 
 '''
 >>>>>>> master
