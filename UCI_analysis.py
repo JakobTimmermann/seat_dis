@@ -19,6 +19,28 @@ avg_row_dyn.rename(columns= {'seat_row':'dyn'},inplace=True)
 avg_row['dyn']=avg_row_dyn.dyn.values
 avg_row['difference'] = avg_row.dyn.values-avg_row.reg.values
 
+# Testing for normal distribution
+print('    output normaltest for regular') 
+print(sst.normaltest(avg_row.reg))
+print('    output normaltest for dynamic') 
+print(sst.normaltest(avg_row.dyn))
+
+# Zweistichproben Gauss Test : https://de.wikipedia.org/wiki/Gau%C3%9F-Test
+# 
+reg_td_av, dyn_td_av = avg_row.mean()[:2]
+n = len(avg_row.reg)
+reg_dev = np.sqrt(((avg_row.reg - reg_td_av)**2).values.sum()/(len(avg_row.reg)-1))
+dyn_dev = np.sqrt(((avg_row.dyn - dyn_td_av)**2).values.sum()/(len(avg_row.dyn)-1))
+
+Z=(dyn_td_av-reg_td_av)/np.sqrt((dyn_dev)**2/n + (reg_dev)**2/n)
+
+Z_dyn = np.sqrt(len(avg_row.dyn))*(dyn_td_av - reg_td_av)/dyn_dev
+
+# Welch-Test https://en.wikipedia.org/wiki/Welch%27s_t-test
+#
+import scipy.stats as sst
+sst.ttest_ind_from_stats(reg_td_av,reg_dev,134,dyn_td_av,dyn_dev,134)
+
 weekly = avg_row.reset_index()
 weekly = weekly.groupby(pd.to_datetime(weekly.show_start).dt.week).mean()
 weekly.plot()
