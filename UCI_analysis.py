@@ -126,7 +126,7 @@ class analyze_UCI:
 
 		## Undo Demand Option
 
-		self.regular = self.data[self.data.show_start<pd.datetime(2015,8,12).date()e
+		self.regular = self.data[self.data.show_start<pd.datetime(2015,8,12).date()]
 		self.dynamic = self.data[self.data.show_start>=pd.datetime(2016,3,31).date()]
 		self.regular = self.regular.merge(self.shows_aus[['Einteilung','ext_show_id']])
 		self.dynamic = self.dynamic.merge(self.shows_aus[['Einteilung','ext_show_id']])
