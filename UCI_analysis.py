@@ -6,15 +6,14 @@ import scipy.stats as sst
 
 
 def HypTest(data_m,aud_no=None):
-
 	##  Hiermit muss wirklich sehr vorsichtig umgegangen werden. Die Statistiken sind eben NICHT normalverteilt.
 	##  Generell gilt GROSSES P == GROSSE UEBEREINSTIMMUNG 	
-	print('\n    Sample Size: %i' %len(data_m))
 	if aud_no == None:
 		temp = data_m[['av_day_aud_reg','av_day_aud_dyn']]
 	else:
 		temp = data_m[['av_day_aud_reg','av_day_aud_dyn']][data_m.auditorium_no_x == aud_no]
 	temp.rename(columns= {'av_day_aud_reg':'av_reg','av_day_aud_dyn':'av_dyn'},inplace=True)
+	print('\n    Sample Size: %i' %len(temp))
 
 	# Calculate parameters
 	reg_td_av, dyn_td_av = temp.mean()[:2]
@@ -34,7 +33,7 @@ def HypTest(data_m,aud_no=None):
 	tc,pc = sst.kstest(temp.av_dyn, 'norm',args=(reg_td_av,reg_dev),alternative='less')
 	print('\n    COMPARE both distributions IF BOTH ARE NORMAL DISTRIBUTIONS:  t = %g  p = %g' % (tc,pc))
 
-	return temp
+	#return temp
 	
 
 def plot_weekly_total(weekly_total):
